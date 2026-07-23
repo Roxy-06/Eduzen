@@ -30,18 +30,18 @@ st.markdown(
     }
     
     .stApp {
-        background-color: #f8fafc;
+        background-color: #FEDEE1;
     }
 
     /* GLOBAL TEXT CONTRAST FIX */
     .stApp p, .stApp span, .stApp label, .stApp div, .stApp header, .stApp small, .stApp caption {
-        color: #0f172a;
+        color: #000000;
     }
 
     /* SIDEBAR STYLING & HIGH-CONTRAST OVERRIDES */
     [data-testid="stSidebar"] {
-        background-color: #0f172a !important;
-        border-right: 1px solid #1e293b;
+        background-color: #70020f !important;
+        border-right: 1px solid #4a010a;
     }
     [data-testid="stSidebar"] p, 
     [data-testid="stSidebar"] span, 
@@ -50,15 +50,15 @@ st.markdown(
     [data-testid="stSidebar"] h1,
     [data-testid="stSidebar"] h2,
     [data-testid="stSidebar"] h3 {
-        color: #f8fafc !important;
+        color: #ffffff !important;
     }
     [data-testid="stSidebar"] .stCaption {
-        color: #94a3b8 !important;
+        color: #f2c6cb !important;
     }
 
     /* HERO BANNER STYLING */
     .hero-banner {
-        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+        background: linear-gradient(135deg, #4a010a 0%, #70020f 50%, #8a0313 100%);
         border-radius: 14px;
         padding: 26px 30px;
         color: #ffffff !important;
@@ -77,21 +77,21 @@ st.markdown(
     }
     .hero-subtitle {
         font-size: 0.95rem;
-        color: #cbd5e1 !important;
+        color: #ffffff !important;
         margin: 0;
         font-weight: 400;
     }
 
     /* PROFILE CARD IN SIDEBAR */
     .profile-card {
-        background: #1e293b;
+        background: #70020f;
         border-radius: 10px;
         padding: 16px;
-        border: 1px solid #334155;
+        border: 1px solid #4a010a;
         margin-bottom: 20px;
     }
     .profile-card * {
-        color: #f8fafc !important;
+        color: #ffffff !important;
     }
 
     /* METRIC CARDS */
@@ -113,19 +113,19 @@ st.markdown(
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.06em;
-        color: #64748b !important;
+        color: #000000 !important;
         margin-bottom: 4px;
     }
     .metric-value {
         font-size: 1.75rem;
         font-weight: 700;
-        color: #0f172a !important;
+        color: #000000 !important;
         margin: 0;
         line-height: 1.2;
     }
     .metric-caption {
         font-size: 0.78rem;
-        color: #64748b !important;
+        color: #000000 !important;
         margin-top: 4px;
     }
 
@@ -141,7 +141,7 @@ st.markdown(
     .card-title {
         font-size: 1.05rem;
         font-weight: 600;
-        color: #0f172a !important;
+        color: #000000 !important;
         margin-bottom: 12px;
         padding-bottom: 8px;
         border-bottom: 1px solid #f1f5f9;
@@ -157,48 +157,48 @@ st.markdown(
         text-transform: uppercase;
         letter-spacing: 0.05em;
     }
-    .badge-primary { background: #e0e7ff; color: #3730a3 !important; }
+    .badge-primary { background: #ffffff; color: #000000 !important; }
     .badge-success { background: #d1fae5; color: #065f46 !important; }
-    .badge-dark { background: #334155; color: #f8fafc !important; }
+    .badge-dark { background: #70020f; color: #ffffff !important; }
 
     /* INPUTS, TEXTAREAS & PLACEHOLDERS FIX */
     label[data-testid="stWidgetLabel"] p, 
     label[data-testid="stWidgetLabel"] span {
-        color: #0f172a !important;
+        color: #000000 !important;
         font-weight: 600 !important;
     }
     
     div[data-baseweb="input"] input, 
     div[data-baseweb="textarea"] textarea {
-        color: #0f172a !important;
+        color: #000000 !important;
         background-color: #ffffff !important;
         border: 1px solid #cbd5e1 !important;
         border-radius: 6px !important;
     }
 
     ::placeholder {
-        color: #64748b !important;
+        color: #000000 !important;
         opacity: 1 !important;
     }
 
     /* FILE UPLOADER FIX (Under Course Material) */
     [data-testid="stFileUploadDropzone"] {
-        background-color: #f8fafc !important;
+        background-color: #ffffff !important;
         border: 1px dashed #94a3b8 !important;
         border-radius: 8px !important;
     }
     [data-testid="stFileUploadDropzone"] * {
-        color: #0f172a !important;
+        color: #000000 !important;
     }
 
     /* SELECTBOX & DROPDOWN MENU FIXES */
     div[data-baseweb="select"] * {
-        color: #0f172a !important;
+        color: #000000 !important;
         background-color: #ffffff !important;
     }
     ul[role="listbox"] li, 
     div[data-baseweb="menu"] * {
-        color: #0f172a !important;
+        color: #000000 !important;
         background-color: #ffffff !important;
     }
 
@@ -217,24 +217,56 @@ st.markdown(
     [data-testid="stExpander"] details summary p,
     [data-testid="stExpander"] details summary span,
     [data-testid="stExpander"] * {
-        color: #0f172a !important;
+        color: #000000 !important;
         font-weight: 500 !important;
     }
 
     /* TABS FIX */
     button[data-baseweb="tab"] p, button[data-baseweb="tab"] span {
-        color: #475569 !important;
+        color: #000000 !important;
         font-weight: 500 !important;
     }
     button[aria-selected="true"][data-baseweb="tab"] p, 
     button[aria-selected="true"][data-baseweb="tab"] span {
-        color: #1e1b4b !important;
+        color: #70020f !important;
         font-weight: 700 !important;
     }
 
     /* DATAFRAME & TABLES FIX */
     [data-testid="stDataFrame"] * {
-        color: #0f172a !important;
+        color: #000000 !important;
+    }
+
+    /* BUTTONS - DARK RED THEME (applies to all buttons: primary, secondary, form submit, uploader) */
+    .stButton > button,
+    [data-testid="stFormSubmitButton"] button,
+    [data-testid="stFileUploadDropzone"] button,
+    [data-testid="baseButton-primary"],
+    [data-testid="baseButton-secondary"],
+    button[kind="primary"],
+    button[kind="secondary"] {
+        background-color: #70020f !important;
+        color: #ffffff !important;
+        border: 1px solid #4a010a !important;
+        font-weight: 600 !important;
+        border-radius: 6px !important;
+    }
+    .stButton > button:hover,
+    [data-testid="stFormSubmitButton"] button:hover,
+    [data-testid="stFileUploadDropzone"] button:hover,
+    [data-testid="baseButton-primary"]:hover,
+    [data-testid="baseButton-secondary"]:hover,
+    button[kind="primary"]:hover,
+    button[kind="secondary"]:hover {
+        background-color: #4a010a !important;
+        color: #ffffff !important;
+        border-color: #70020f !important;
+    }
+    .stButton > button:focus,
+    [data-testid="stFormSubmitButton"] button:focus,
+    button[kind="primary"]:focus,
+    button[kind="secondary"]:focus {
+        box-shadow: 0 0 0 2px #f2c6cb !important;
     }
     </style>
     """,
