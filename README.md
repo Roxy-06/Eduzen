@@ -1,5 +1,57 @@
 # EduZen
 
+Professional AI-powered campus dashboard (EduZen)
+
+This repository contains a minimal FastAPI backend and a Streamlit frontend delivering a professional role-based dashboard for teachers and students. The app includes:
+
+- Role-based authentication (teacher / student) with seeded demo accounts
+- Classroom & attendance management
+- Material upload and lightweight RAG-style study assistant (Gemini integration optional)
+- Polished Streamlit UI for teacher and student dashboards
+
+Demo accounts
+- Teacher: `teacher@eduzone.com` / `teacher123`
+- Student: `student@eduzone.com` / `student123`
+
+Run locally
+1. Install dependencies:
+
+```powershell
+Set-Location 'D:\EduZen'
+python -m pip install -r requirements.txt
+```
+
+2. Start the backend (FastAPI):
+
+```powershell
+Set-Location 'D:\EduZen\backend'
+python -m uvicorn main:app --reload --port 8000
+```
+
+3. Start the frontend (Streamlit) in a separate terminal:
+
+```powershell
+Set-Location 'D:\EduZen'
+python -m streamlit run frontend/app.py --server.headless true --server.port 8501
+```
+
+Environment variables
+- To enable Gemini (Google) generative features, set the `GEMINI_API_KEY` environment variable. For example on Windows (user-level persistent):
+
+```powershell
+setx GEMINI_API_KEY "<PASTE_YOUR_KEY_HERE>"
+$env:GEMINI_API_KEY = "<PASTE_YOUR_KEY_HERE>"  # sets for current session
+```
+
+Notes
+- The RAG engine is resilient to a missing Gemini key and will fall back to deterministic sample responses. To get full AI responses, supply a valid `GEMINI_API_KEY` and restart the backend so the new env var is picked up.
+
+Contributing
+- Small, focused PRs are welcome. If you'd like I can open a PR with the dashboard polish and tests.
+
+License
+- MIT
+
 EduZen is an AI-powered academic assistant designed for universities and study ecosystems. It helps instructors upload course materials and enables students to interact with those materials through an intelligent tutor experience powered by FastAPI, Streamlit, and Gemini.
 
 ## Overview
