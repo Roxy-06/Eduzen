@@ -108,6 +108,12 @@ Then open the Streamlit app in your browser.
 4. The embeddings are indexed with FAISS for semantic retrieval.
 5. Students ask questions or request study outputs, and the backend uses the retrieved context to generate grounded answers.
 
+## Recent Updates
+
+- Improved the local application workflow for uploading and querying course materials.
+- Refined the backend and frontend interaction for a smoother study-assistant experience.
+- Continued updates to the SQLite-backed data layer and project documentation.
+
 ## Notes
 
 - The current implementation uses a local SQLite database and local uploads directory.
