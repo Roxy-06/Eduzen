@@ -40,6 +40,8 @@ EduZen/
 └── README.md
 ```
 
+> This README reflects the current local implementation of the app. No runtime behavior has been changed.
+
 ## Run locally
 
 1. Install dependencies:
