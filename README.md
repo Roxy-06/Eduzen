@@ -80,6 +80,11 @@ If the key is missing, the app can still start, but the AI features may use fall
 - Uploaded materials are kept in the local uploads folder.
 - PDF support is currently limited to `.pdf` files.
 
+## Contributors
+
+ - Harshika Joshi (harshikajoshi58@gmail.com)
+ - Rudranil Mallick (rudranilmallick8335@gmail.com)
+
 ## License
 
 MIT
