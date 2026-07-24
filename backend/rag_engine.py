@@ -16,16 +16,13 @@ def _build_client():
         return None
 
 
-# Initialize Gemini Client (Requires GEMINI_API_KEY environment variable)
 client = _build_client()
 
-# Global in-memory storage for FAISS index and text chunks
 text_chunks = []
 index = None
-EMBEDDING_DIM = 768  # Standard dimension for fast vector search
+EMBEDDING_DIM = 768
 
 def extract_text_from_pdf(pdf_path: str) -> str:
-    """Extracts raw text from an uploaded PDF file."""
     reader = pypdf.PdfReader(pdf_path)
     text = ""
     for page in reader.pages:
@@ -35,7 +32,6 @@ def extract_text_from_pdf(pdf_path: str) -> str:
     return text
 
 def chunk_text(text: str, chunk_size: int = 600, overlap: int = 100) -> list[str]:
-    """Splits text into overlapping chunks for indexing."""
     words = text.split()
     chunks = []
     for i in range(0, len(words), chunk_size - overlap):
@@ -45,7 +41,6 @@ def chunk_text(text: str, chunk_size: int = 600, overlap: int = 100) -> list[str
     return chunks
 
 def index_document(pdf_path: str):
-    """Processes PDF, generates embeddings via Gemini, and indexes them into FAISS."""
     global text_chunks, index
     raw_text = extract_text_from_pdf(pdf_path)
     new_chunks = chunk_text(raw_text)
@@ -76,7 +71,6 @@ def index_document(pdf_path: str):
     return True
 
 def retrieve_context(query: str, top_k: int = 3) -> str:
-    """Retrieves top matching text chunks for a query using FAISS vector search."""
     global index, text_chunks
     if index is None or len(text_chunks) == 0:
         return ""
@@ -96,7 +90,6 @@ def retrieve_context(query: str, top_k: int = 3) -> str:
     return "\n\n---\n\n".join(retrieved)
 
 def generate_rag_response(mode: str, query: str = "") -> str:
-    """Generates responses for Q&A, Summaries, Quizzes, and Flashcards using prompt templates."""
     context = retrieve_context(query if query else "Overview of key concepts")
 
     if not context:

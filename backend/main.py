@@ -1,5 +1,7 @@
 import os
 import shutil
+from typing import Optional
+
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -8,16 +10,20 @@ from db import (
     init_db,
     add_material,
     get_materials,
+    get_subjects,
+    get_teacher_classes,
     create_classroom,
     get_classrooms,
     add_student,
     get_students,
-    create_session,
-    get_sessions,
+    start_subject_session,
+    get_latest_open_session,
+    get_sessions_for_subject,
     mark_attendance,
     get_session_attendance,
     get_attendance_summary,
     get_student_session_log,
+    get_student_subject_report,
     create_user,
     authenticate_user,
     get_student_dashboard,
@@ -53,10 +59,14 @@ class ClassroomCreate(BaseModel):
 class StudentCreate(BaseModel):
     name: str
     student_id: str
+    email: Optional[str] = None
+
+
+class SessionCreate(BaseModel):
+    teacher_id: int
 
 
 class AttendanceMark(BaseModel):
-    student_id: int
     status: str
 
 
@@ -140,6 +150,23 @@ def ai_generate(req: QueryRequest):
     return {"response": result}
 
 
+# ---------------------------------------------------------
+# SUBJECTS & TEACHER ASSIGNMENTS
+# ---------------------------------------------------------
+@app.get("/api/subjects")
+def list_subjects_endpoint():
+    return get_subjects()
+
+
+@app.get("/api/teachers/{teacher_id}/classes")
+def teacher_classes_endpoint(teacher_id: int):
+    """All classroom+subject combinations this teacher is assigned to teach."""
+    return get_teacher_classes(teacher_id)
+
+
+# ---------------------------------------------------------
+# CLASSROOMS & ROSTER
+# ---------------------------------------------------------
 @app.post("/api/classrooms")
 def create_classroom_endpoint(payload: ClassroomCreate):
     classroom_id = create_classroom(payload.name)
@@ -153,7 +180,7 @@ def list_classrooms_endpoint():
 
 @app.post("/api/classrooms/{classroom_id}/students")
 def add_student_endpoint(classroom_id: int, payload: StudentCreate):
-    student_id = add_student(classroom_id, payload.name, payload.student_id)
+    student_id = add_student(classroom_id, payload.name, payload.student_id, payload.email)
     return {"id": student_id, "name": payload.name, "student_id": payload.student_id}
 
 
@@ -162,21 +189,30 @@ def list_students_endpoint(classroom_id: int):
     return get_students(classroom_id)
 
 
-@app.post("/api/classrooms/{classroom_id}/sessions")
-def start_session_endpoint(classroom_id: int):
-    return create_session(classroom_id)
+# ---------------------------------------------------------
+# SESSIONS & ATTENDANCE (per classroom + subject)
+# ---------------------------------------------------------
+@app.post("/api/classrooms/{classroom_id}/subjects/{subject_id}/sessions")
+def start_session_endpoint(classroom_id: int, subject_id: int, payload: SessionCreate):
+    return start_subject_session(classroom_id, subject_id, payload.teacher_id)
 
 
-@app.get("/api/classrooms/{classroom_id}/sessions")
-def list_sessions_endpoint(classroom_id: int):
-    return get_sessions(classroom_id)
+@app.get("/api/classrooms/{classroom_id}/subjects/{subject_id}/today-session")
+def today_session_endpoint(classroom_id: int, subject_id: int, teacher_id: int):
+    session = get_latest_open_session(classroom_id, subject_id, teacher_id)
+    return session or {}
 
 
-@app.post("/api/sessions/{session_id}/attendance")
-def mark_attendance_endpoint(session_id: int, payload: AttendanceMark):
+@app.get("/api/classrooms/{classroom_id}/subjects/{subject_id}/sessions")
+def list_subject_sessions_endpoint(classroom_id: int, subject_id: int):
+    return get_sessions_for_subject(classroom_id, subject_id)
+
+
+@app.post("/api/sessions/{session_id}/attendance/{student_id}")
+def mark_attendance_endpoint(session_id: int, student_id: int, payload: AttendanceMark):
     if payload.status not in ("present", "absent"):
         raise HTTPException(status_code=400, detail="status must be 'present' or 'absent'")
-    mark_attendance(session_id, payload.student_id, payload.status)
+    mark_attendance(session_id, student_id, payload.status)
     return {"detail": "ok"}
 
 
@@ -186,10 +222,18 @@ def get_session_attendance_endpoint(session_id: int):
 
 
 @app.get("/api/classrooms/{classroom_id}/attendance-summary")
-def attendance_summary_endpoint(classroom_id: int):
-    return get_attendance_summary(classroom_id)
+def attendance_summary_endpoint(classroom_id: int, subject_id: Optional[int] = None):
+    return get_attendance_summary(classroom_id, subject_id)
 
 
 @app.get("/api/classrooms/{classroom_id}/students/{student_id}/log")
 def student_log_endpoint(classroom_id: int, student_id: int):
     return get_student_session_log(classroom_id, student_id)
+
+
+# ---------------------------------------------------------
+# STUDENT-FACING ATTENDANCE + MARKS REPORT
+# ---------------------------------------------------------
+@app.get("/api/students/user/{user_id}/report")
+def student_report_endpoint(user_id: int):
+    return get_student_subject_report(user_id)

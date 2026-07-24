@@ -17,35 +17,32 @@ st.markdown(
     """
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    
-    * { 
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+
+    * {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
-    
-    /* Main Layout Background */
+
     .main .block-container {
         padding-top: 1.5rem;
         padding-bottom: 3rem;
         max-width: 1250px;
     }
-    
+
     .stApp {
         background-color: #FEDEE1;
     }
 
-    /* GLOBAL TEXT CONTRAST FIX */
     .stApp p, .stApp span, .stApp label, .stApp div, .stApp header, .stApp small, .stApp caption {
         color: #000000;
     }
 
-    /* SIDEBAR STYLING & HIGH-CONTRAST OVERRIDES */
     [data-testid="stSidebar"] {
         background-color: #70020f !important;
         border-right: 1px solid #4a010a;
     }
-    [data-testid="stSidebar"] p, 
-    [data-testid="stSidebar"] span, 
-    [data-testid="stSidebar"] div, 
+    [data-testid="stSidebar"] p,
+    [data-testid="stSidebar"] span,
+    [data-testid="stSidebar"] div,
     [data-testid="stSidebar"] label,
     [data-testid="stSidebar"] h1,
     [data-testid="stSidebar"] h2,
@@ -56,7 +53,6 @@ st.markdown(
         color: #f2c6cb !important;
     }
 
-    /* HERO BANNER STYLING */
     .hero-banner {
         background: linear-gradient(135deg, #4a010a 0%, #70020f 50%, #8a0313 100%);
         border-radius: 14px;
@@ -82,19 +78,21 @@ st.markdown(
         font-weight: 400;
     }
 
-    /* PROFILE CARD IN SIDEBAR */
     .profile-card {
-        background: #70020f;
+        background: #f2c6cb !important;
         border-radius: 10px;
         padding: 16px;
-        border: 1px solid #4a010a;
+        border: 1px solid #e8a5ab;
         margin-bottom: 20px;
     }
-    .profile-card * {
-        color: #ffffff !important;
+    .profile-card *,
+    .profile-card p,
+    .profile-card span,
+    .profile-card div,
+    .profile-card label {
+        color: #70020f !important;
     }
 
-    /* METRIC CARDS */
     .metric-card {
         background: #ffffff;
         border: 1px solid #e2e8f0;
@@ -129,7 +127,6 @@ st.markdown(
         margin-top: 4px;
     }
 
-    /* CONTENT CARDS */
     .content-card {
         background: #ffffff;
         border-radius: 12px;
@@ -147,7 +144,6 @@ st.markdown(
         border-bottom: 1px solid #f1f5f9;
     }
 
-    /* BADGES */
     .text-badge {
         display: inline-block;
         padding: 3px 10px;
@@ -160,15 +156,16 @@ st.markdown(
     .badge-primary { background: #ffffff; color: #000000 !important; }
     .badge-success { background: #d1fae5; color: #065f46 !important; }
     .badge-dark { background: #70020f; color: #ffffff !important; }
+    .badge-present { background: #d1fae5; color: #065f46 !important; }
+    .badge-absent { background: #fee2e2; color: #991b1b !important; }
 
-    /* INPUTS, TEXTAREAS & PLACEHOLDERS FIX */
-    label[data-testid="stWidgetLabel"] p, 
+    label[data-testid="stWidgetLabel"] p,
     label[data-testid="stWidgetLabel"] span {
         color: #000000 !important;
         font-weight: 600 !important;
     }
-    
-    div[data-baseweb="input"] input, 
+
+    div[data-baseweb="input"] input,
     div[data-baseweb="textarea"] textarea {
         color: #000000 !important;
         background-color: #ffffff !important;
@@ -181,28 +178,27 @@ st.markdown(
         opacity: 1 !important;
     }
 
-    /* FILE UPLOADER FIX (Under Course Material) */
     [data-testid="stFileUploadDropzone"] {
-        background-color: #ffffff !important;
+        background-color: #2d3748 !important;
         border: 1px dashed #94a3b8 !important;
         border-radius: 8px !important;
     }
-    [data-testid="stFileUploadDropzone"] * {
-        color: #000000 !important;
+    [data-testid="stFileUploadDropzone"] span,
+    [data-testid="stFileUploadDropzone"] p,
+    [data-testid="stFileUploadDropzone"] div {
+        color: #f2c6cb !important;
     }
 
-    /* SELECTBOX & DROPDOWN MENU FIXES */
     div[data-baseweb="select"] * {
         color: #000000 !important;
         background-color: #ffffff !important;
     }
-    ul[role="listbox"] li, 
+    ul[role="listbox"] li,
     div[data-baseweb="menu"] * {
         color: #000000 !important;
         background-color: #ffffff !important;
     }
 
-    /* FORMS & EXPANDERS (Under Classroom Name) */
     [data-testid="stForm"] {
         background-color: #ffffff !important;
         border: 1px solid #e2e8f0 !important;
@@ -221,23 +217,20 @@ st.markdown(
         font-weight: 500 !important;
     }
 
-    /* TABS FIX */
     button[data-baseweb="tab"] p, button[data-baseweb="tab"] span {
         color: #000000 !important;
         font-weight: 500 !important;
     }
-    button[aria-selected="true"][data-baseweb="tab"] p, 
+    button[aria-selected="true"][data-baseweb="tab"] p,
     button[aria-selected="true"][data-baseweb="tab"] span {
         color: #70020f !important;
         font-weight: 700 !important;
     }
 
-    /* DATAFRAME & TABLES FIX */
     [data-testid="stDataFrame"] * {
         color: #000000 !important;
     }
 
-    /* BUTTONS - DARK RED THEME (applies to all buttons: primary, secondary, form submit, uploader) */
     .stButton > button,
     [data-testid="stFormSubmitButton"] button,
     [data-testid="stFileUploadDropzone"] button,
@@ -246,11 +239,21 @@ st.markdown(
     button[kind="primary"],
     button[kind="secondary"] {
         background-color: #70020f !important;
-        color: #ffffff !important;
+        color: #f2c6cb !important;
         border: 1px solid #4a010a !important;
         font-weight: 600 !important;
         border-radius: 6px !important;
     }
+
+    .stButton > button p,
+    .stButton > button span,
+    [data-testid="stFormSubmitButton"] button p,
+    [data-testid="stFormSubmitButton"] button span,
+    [data-testid="stFileUploadDropzone"] button p,
+    [data-testid="stFileUploadDropzone"] button span {
+        color: #f2c6cb !important;
+    }
+
     .stButton > button:hover,
     [data-testid="stFormSubmitButton"] button:hover,
     [data-testid="stFileUploadDropzone"] button:hover,
@@ -259,9 +262,17 @@ st.markdown(
     button[kind="primary"]:hover,
     button[kind="secondary"]:hover {
         background-color: #4a010a !important;
-        color: #ffffff !important;
+        color: #f2c6cb !important;
         border-color: #70020f !important;
     }
+
+    .stButton > button:hover p,
+    .stButton > button:hover span,
+    [data-testid="stFormSubmitButton"] button:hover p,
+    [data-testid="stFormSubmitButton"] button:hover span {
+        color: #f2c6cb !important;
+    }
+
     .stButton > button:focus,
     [data-testid="stFormSubmitButton"] button:focus,
     button[kind="primary"]:focus,
@@ -455,15 +466,123 @@ if user["role"] == "teacher":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    col_left, col_right = st.columns([1.2, 1])
+    col_left, col_right = st.columns([1.3, 1])
 
-    # Left Column: Material Upload & Schedule
+    # -------------------------------------------------------------
+    # LEFT COLUMN: Take Attendance for a class the teacher teaches
+    # -------------------------------------------------------------
     with col_left:
         st.markdown("<div class='content-card'>", unsafe_allow_html=True)
-        st.markdown("<div class='card-title'>Course Routine & Details</div>", unsafe_allow_html=True)
-        st.write(f"**Routine:** {dashboard.get('routine', 'N/A')}")
-        st.write(f"**Current Topic:** {dashboard.get('current_topic', 'N/A')}")
-        st.write(f"**Office Hours:** {dashboard.get('office_hours', 'N/A')}")
+        st.markdown("<div class='card-title'>Take Attendance</div>", unsafe_allow_html=True)
+        st.caption("Select one of your classes, start today's session, then click each student to mark them present or absent.")
+
+        try:
+            my_classes = requests.get(f"{API_URL}/teachers/{user['id']}/classes").json()
+        except Exception:
+            my_classes = []
+
+        if not my_classes:
+            st.info("You are not yet assigned to teach any classroom/subject.")
+        else:
+            class_labels = {
+                f"{c['classroom_name']} — {c['subject_name']} ({c['subject_code']})": c
+                for c in my_classes
+            }
+            selected_label = st.selectbox("Select Your Class", list(class_labels.keys()), key="teacher_class_select")
+            selected_class = class_labels[selected_label]
+            classroom_id = selected_class["classroom_id"]
+            subject_id = selected_class["subject_id"]
+
+            # Find or start today's session for this classroom+subject
+            try:
+                today_session = requests.get(
+                    f"{API_URL}/classrooms/{classroom_id}/subjects/{subject_id}/today-session",
+                    params={"teacher_id": user["id"]},
+                ).json()
+            except Exception:
+                today_session = {}
+
+            if not today_session:
+                if st.button("Start Today's Session", type="primary", use_container_width=True, key="start_session_btn"):
+                    requests.post(
+                        f"{API_URL}/classrooms/{classroom_id}/subjects/{subject_id}/sessions",
+                        json={"teacher_id": user["id"]},
+                    )
+                    st.rerun()
+            else:
+                session_id = today_session["id"]
+                st.success(f"Session active — started {today_session['session_date']}")
+
+                try:
+                    roster = requests.get(f"{API_URL}/classrooms/{classroom_id}/students").json()
+                except Exception:
+                    roster = []
+
+                try:
+                    current_attendance = requests.get(f"{API_URL}/sessions/{session_id}/attendance").json()
+                except Exception:
+                    current_attendance = {}
+
+                if not roster:
+                    st.info("No students enrolled in this classroom yet.")
+                else:
+                    st.write("**Click a student to mark Present / Absent**")
+                    for student in roster:
+                        status = current_attendance.get(str(student["id"]), current_attendance.get(student["id"]))
+                        badge_class = "badge-present" if status == "present" else ("badge-absent" if status == "absent" else "badge-primary")
+                        badge_text = status.upper() if status else "NOT MARKED"
+
+                        row_cols = st.columns([2.2, 1, 1, 1])
+                        with row_cols[0]:
+                            st.markdown(
+                                f"**{student['name']}** &nbsp; "
+                                f"<span class='text-badge {badge_class}'>{badge_text}</span>",
+                                unsafe_allow_html=True,
+                            )
+                        with row_cols[1]:
+                            st.caption(student["student_id"])
+                        with row_cols[2]:
+                            if st.button("Present", key=f"present_{student['id']}", use_container_width=True):
+                                requests.post(
+                                    f"{API_URL}/sessions/{session_id}/attendance/{student['id']}",
+                                    json={"status": "present"},
+                                )
+                                st.rerun()
+                        with row_cols[3]:
+                            if st.button("Absent", key=f"absent_{student['id']}", use_container_width=True):
+                                requests.post(
+                                    f"{API_URL}/sessions/{session_id}/attendance/{student['id']}",
+                                    json={"status": "absent"},
+                                )
+                                st.rerun()
+
+                st.markdown("---")
+                st.write("**Attendance Summary — this subject**")
+                try:
+                    summary = requests.get(
+                        f"{API_URL}/classrooms/{classroom_id}/attendance-summary",
+                        params={"subject_id": subject_id},
+                    ).json()
+                    if summary:
+                        st.dataframe(
+                            [
+                                {
+                                    "Student": s["name"],
+                                    "Roll No": s["roll_no"],
+                                    "Classes Held": s["total_classes"],
+                                    "Attended": s["attended"],
+                                    "Attendance %": s["percentage"],
+                                }
+                                for s in summary
+                            ],
+                            use_container_width=True,
+                            hide_index=True,
+                        )
+                    else:
+                        st.info("No attendance history yet for this subject.")
+                except Exception:
+                    st.warning("Unable to load attendance summary.")
+
         st.markdown("</div>", unsafe_allow_html=True)
 
         st.markdown("<div class='content-card'>", unsafe_allow_html=True)
@@ -486,28 +605,13 @@ if user["role"] == "teacher":
                         st.error(f"Backend processing error: {exc}")
         st.markdown("</div>", unsafe_allow_html=True)
 
-        st.markdown("<div class='content-card'>", unsafe_allow_html=True)
-        st.markdown("<div class='card-title'>Indexed Repository</div>", unsafe_allow_html=True)
-        try:
-            materials = requests.get(f"{API_URL}/materials").json()
-            if materials:
-                st.dataframe(
-                    [{"Filename": m["filename"], "Uploaded Date": m["uploaded_at"]} for m in materials],
-                    use_container_width=True,
-                    hide_index=True,
-                )
-            else:
-                st.info("No course materials indexed yet.")
-        except Exception as exc:
-            st.warning(f"Unable to retrieve material repository: {exc}")
-        st.markdown("</div>", unsafe_allow_html=True)
-
-    # Right Column: Classroom Management Operations
+    # -------------------------------------------------------------
+    # RIGHT COLUMN: Classroom Administration
+    # -------------------------------------------------------------
     with col_right:
         st.markdown("<div class='content-card'>", unsafe_allow_html=True)
         st.markdown("<div class='card-title'>Classroom Administration</div>", unsafe_allow_html=True)
 
-        # Classroom Creation Form
         with st.form("create_classroom_form", clear_on_submit=True):
             st.caption("Create New Classroom Section")
             new_class_name = st.text_input("Classroom Name", placeholder="e.g. CS-101 Section A")
@@ -522,7 +626,6 @@ if user["role"] == "teacher":
 
         st.divider()
 
-        # Manage Selected Classroom
         try:
             classrooms = requests.get(f"{API_URL}/classrooms").json()
         except Exception:
@@ -530,26 +633,26 @@ if user["role"] == "teacher":
 
         if classrooms:
             class_options = {item["name"]: item["id"] for item in classrooms}
-            selected_class_name = st.selectbox("Select Classroom Section", list(class_options.keys()))
+            selected_class_name = st.selectbox("Select Classroom Section", list(class_options.keys()), key="admin_classroom_select")
             selected_class_id = class_options[selected_class_name]
 
             with st.expander("Enroll Student to Section"):
                 with st.form("enroll_student_form", clear_on_submit=True):
                     s_name = st.text_input("Student Name", placeholder="e.g. Jane Doe")
-                    s_id = st.text_input("Institutional Roll/ID", placeholder="e.g. STU-2026-001")
+                    s_id = st.text_input("Institutional Roll/ID", placeholder="e.g. STU-2026-011")
+                    s_email = st.text_input("Student Login Email (optional)", placeholder="links this roster entry to their account")
                     submit_enroll = st.form_submit_button("Enroll Student", use_container_width=True)
                     if submit_enroll:
                         if s_name.strip() and s_id.strip():
                             requests.post(
                                 f"{API_URL}/classrooms/{selected_class_id}/students",
-                                json={"name": s_name.strip(), "student_id": s_id.strip()},
+                                json={"name": s_name.strip(), "student_id": s_id.strip(), "email": s_email.strip() or None},
                             )
                             st.success("Student assigned successfully.")
                             st.rerun()
                         else:
-                            st.warning("Complete all student details.")
+                            st.warning("Complete all required student details.")
 
-            # Roster Table
             try:
                 students = requests.get(f"{API_URL}/classrooms/{selected_class_id}/students").json()
                 if students:
@@ -566,6 +669,22 @@ if user["role"] == "teacher":
         else:
             st.info("No active classrooms created.")
 
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        st.markdown("<div class='content-card'>", unsafe_allow_html=True)
+        st.markdown("<div class='card-title'>Indexed Repository</div>", unsafe_allow_html=True)
+        try:
+            materials = requests.get(f"{API_URL}/materials").json()
+            if materials:
+                st.dataframe(
+                    [{"Filename": m["filename"], "Uploaded Date": m["uploaded_at"]} for m in materials],
+                    use_container_width=True,
+                    hide_index=True,
+                )
+            else:
+                st.info("No course materials indexed yet.")
+        except Exception as exc:
+            st.warning(f"Unable to retrieve material repository: {exc}")
         st.markdown("</div>", unsafe_allow_html=True)
 
 
@@ -597,25 +716,25 @@ else:
             f"""<div class="metric-card">
                 <div class="metric-label">Attendance Rate</div>
                 <div class="metric-value">{dashboard.get('attendance_rate', 0)}%</div>
-                <div class="metric-caption">Current semester</div>
+                <div class="metric-caption">Across all subjects</div>
             </div>""",
             unsafe_allow_html=True,
         )
     with c2:
         st.markdown(
             f"""<div class="metric-card">
-                <div class="metric-label">Progress Score</div>
+                <div class="metric-label">Marks Score</div>
                 <div class="metric-value">{dashboard.get('progress_score', 0)}%</div>
-                <div class="metric-caption">Overall completion</div>
+                <div class="metric-caption">Across all subjects</div>
             </div>""",
             unsafe_allow_html=True,
         )
     with c3:
         st.markdown(
             f"""<div class="metric-card">
-                <div class="metric-label">Modules Finished</div>
+                <div class="metric-label">Subjects</div>
                 <div class="metric-value">{dashboard.get('topics_completed', 0)}</div>
-                <div class="metric-caption">Completed topics</div>
+                <div class="metric-caption">Enrolled this term</div>
             </div>""",
             unsafe_allow_html=True,
         )
@@ -643,7 +762,6 @@ else:
             ["Q&A Assistant", "Module Summarizer", "Practice Quiz", "Flashcards"]
         )
 
-        # Tab 1: Q&A
         with tab_qa:
             qa_query = st.text_area("Ask a question about your course materials:", height=90, key="qa_input")
             if st.button("Generate Answer", type="primary", key="btn_qa"):
@@ -664,7 +782,6 @@ else:
                 else:
                     st.warning("Please enter a question.")
 
-        # Tab 2: Summarizer
         with tab_summary:
             st.write("Generate a structured executive summary of core concepts.")
             sum_query = st.text_input("Specific Focus (Optional)", placeholder="e.g., Chapter 3 key definitions", key="sum_input")
@@ -683,7 +800,6 @@ else:
                     except Exception as exc:
                         st.error(f"Backend issue: {exc}")
 
-        # Tab 3: Quiz Generator
         with tab_quiz:
             st.write("Generate a practice self-assessment quiz from lecture notes.")
             quiz_topic = st.text_input("Topic Focus (Optional)", placeholder="e.g., Data Structures", key="quiz_input")
@@ -702,7 +818,6 @@ else:
                     except Exception as exc:
                         st.error(f"Backend issue: {exc}")
 
-        # Tab 4: Flashcards Generator
         with tab_cards:
             st.write("Generate revision flashcards for key terms and definitions.")
             card_topic = st.text_input("Concept Focus (Optional)", placeholder="e.g., Formulas", key="card_input")
@@ -723,14 +838,51 @@ else:
 
         st.markdown("</div>", unsafe_allow_html=True)
 
+        st.markdown("<div class='content-card'>", unsafe_allow_html=True)
+        st.markdown("<div class='card-title'>My Attendance & Marks — By Subject</div>", unsafe_allow_html=True)
+        try:
+            report = requests.get(f"{API_URL}/students/user/{user['id']}/report").json()
+        except Exception:
+            report = {"subjects": []}
+
+        if not report.get("subjects"):
+            st.info("No subject data available yet — check back once your teacher has taken attendance and posted marks.")
+        else:
+            for subj in report["subjects"]:
+                st.markdown(f"**{subj['subject_name']}** ({subj['subject_code']})")
+                sub_c1, sub_c2 = st.columns(2)
+                with sub_c1:
+                    st.write(f"Attendance: {subj['attended']} / {subj['sessions_held']} classes")
+                    st.progress(min(1.0, subj['attendance_pct'] / 100.0))
+                    st.caption(f"{subj['attendance_pct']}% attendance")
+                with sub_c2:
+                    st.write(f"Marks Score: {subj['marks_pct']}%")
+                    if subj["marks"]:
+                        st.dataframe(
+                            [
+                                {"Exam": m["exam_name"], "Marks Obtained": m["marks_obtained"], "Out Of": m["max_marks"]}
+                                for m in subj["marks"]
+                            ],
+                            use_container_width=True,
+                            hide_index=True,
+                        )
+                    else:
+                        st.caption("No marks posted yet.")
+                st.markdown("---")
+        st.markdown("</div>", unsafe_allow_html=True)
+
     # Right Column: Performance Indicators & Activity Summary
     with col_right:
         st.markdown("<div class='content-card'>", unsafe_allow_html=True)
         st.markdown("<div class='card-title'>Academic Standing</div>", unsafe_allow_html=True)
-        
+
         progress = dashboard.get("progress_score", 0) / 100.0
-        st.write("Overall Progress Completion")
-        st.progress(progress)
+        st.write("Overall Marks Score")
+        st.progress(min(1.0, progress))
+
+        attendance = dashboard.get("attendance_rate", 0) / 100.0
+        st.write("Overall Attendance")
+        st.progress(min(1.0, attendance))
 
         st.markdown("---")
         st.write(f"**Latest Activity:** {dashboard.get('latest_activity', 'N/A')}")
