@@ -81,6 +81,7 @@ If the key is missing, the app can still start, but the AI features may use fall
 - The app currently stores data locally in SQLite.
 - Uploaded materials are kept in the local uploads folder.
 - PDF support is currently limited to `.pdf` files.
+- The AI assistant now supports a Gemini API-backed flow and a graceful fallback mode when no API key is configured.
 
 ## Contributors
 

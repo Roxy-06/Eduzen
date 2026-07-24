@@ -18,6 +18,25 @@ def _build_client():
 
 client = _build_client()
 
+# ---------------------------------------------------------------------
+# GEMMA 4 AS THE GENERATION BRAIN
+# ---------------------------------------------------------------------
+# Gemma 4 is served through the same Gemini API endpoint and the same
+# GEMINI_API_KEY you already have configured - it's just a different
+# model string, not a different SDK or a different account. Swappable
+# via env var so you can trade cost/speed for quality without touching
+# code:
+#   gemma-4-26b-a4b-it  -> MoE, fastest/cheapest, strong reasoning (default)
+#   gemma-4-31b-it      -> Dense, highest quality, slower/pricier
+#   gemma-4-4b-it       -> smallest, use only if you need very low latency
+GENERATION_MODEL = os.getenv("GEMMA_MODEL", "gemma-4-26b-a4b-it")
+
+# Embeddings stay on Gemini Embedding. Gemma 4 has no embedding variant,
+# and switching embedding models would change the vector dimensionality,
+# invalidating every PDF you've already indexed in FAISS. Leaving this
+# alone means today's swap is zero-risk for existing indexed material.
+EMBEDDING_MODEL = "gemini-embedding-2"
+
 text_chunks = []
 index = None
 EMBEDDING_DIM = 768
@@ -55,7 +74,7 @@ def index_document(pdf_path: str):
     embeddings = []
     for chunk in new_chunks:
         response = client.models.embed_content(
-            model="gemini-embedding-2",
+            model=EMBEDDING_MODEL,
             contents=chunk,
             config=types.EmbedContentConfig(output_dimensionality=EMBEDDING_DIM)
         )
@@ -79,7 +98,7 @@ def retrieve_context(query: str, top_k: int = 3) -> str:
         return "\n\n---\n\n".join(text_chunks[:top_k])
 
     query_resp = client.models.embed_content(
-        model="gemini-embedding-2",
+        model=EMBEDDING_MODEL,
         contents=query,
         config=types.EmbedContentConfig(output_dimensionality=EMBEDDING_DIM)
     )
@@ -114,7 +133,7 @@ def generate_rag_response(mode: str, query: str = "") -> str:
     prompt = prompts.get(mode, prompts["qa"])
 
     response = client.models.generate_content(
-        model="gemini-2.0-flash",
+        model=GENERATION_MODEL,
         contents=prompt,
         config=types.GenerateContentConfig(temperature=0.3)
     )
