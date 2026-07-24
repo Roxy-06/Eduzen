@@ -18,6 +18,7 @@ from db import (
     get_students,
     start_subject_session,
     get_latest_open_session,
+    end_session,
     get_sessions_for_subject,
     mark_attendance,
     get_session_attendance,
@@ -206,6 +207,14 @@ def today_session_endpoint(classroom_id: int, subject_id: int, teacher_id: int):
 @app.get("/api/classrooms/{classroom_id}/subjects/{subject_id}/sessions")
 def list_subject_sessions_endpoint(classroom_id: int, subject_id: int):
     return get_sessions_for_subject(classroom_id, subject_id)
+
+
+@app.post("/api/sessions/{session_id}/end")
+def end_session_endpoint(session_id: int):
+    result = end_session(session_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return result
 
 
 @app.post("/api/sessions/{session_id}/attendance/{student_id}")

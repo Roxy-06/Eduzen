@@ -3,6 +3,71 @@ import requests
 
 API_URL = "http://localhost:8000/api"
 
+
+# ---------------------------------------------------------
+# PERFORMANCE: one pooled/keep-alive connection reused across every
+# request, instead of opening a fresh TCP connection per call. This is
+# the single biggest lever here - Streamlit reruns the whole script on
+# every click, and each rerun was making ~7 blocking HTTP calls with a
+# brand-new connection every time.
+# ---------------------------------------------------------
+@st.cache_resource(show_spinner=False)
+def get_http_session():
+    session = requests.Session()
+    adapter = requests.adapters.HTTPAdapter(pool_connections=20, pool_maxsize=20)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
+
+
+API = get_http_session()
+REQUEST_TIMEOUT = 10
+
+
+# ---------------------------------------------------------
+# PERFORMANCE: short-TTL caches for data that rarely changes between
+# clicks (classroom list, a teacher's assigned classes, a roster,
+# materials, dashboards). Each of these is `.clear()`-ed right after the
+# specific action that would make it stale, so nothing goes stale for
+# longer than it takes to click the button that changes it.
+# Anything that must always be perfectly fresh (today's session,
+# per-session attendance, the live attendance summary) is intentionally
+# left uncached below and just uses the pooled session directly.
+# ---------------------------------------------------------
+@st.cache_data(ttl=15, show_spinner=False)
+def fetch_classrooms():
+    return API.get(f"{API_URL}/classrooms", timeout=REQUEST_TIMEOUT).json()
+
+
+@st.cache_data(ttl=30, show_spinner=False)
+def fetch_teacher_classes(teacher_id):
+    return API.get(f"{API_URL}/teachers/{teacher_id}/classes", timeout=REQUEST_TIMEOUT).json()
+
+
+@st.cache_data(ttl=15, show_spinner=False)
+def fetch_students(classroom_id):
+    return API.get(f"{API_URL}/classrooms/{classroom_id}/students", timeout=REQUEST_TIMEOUT).json()
+
+
+@st.cache_data(ttl=10, show_spinner=False)
+def fetch_materials():
+    return API.get(f"{API_URL}/materials", timeout=REQUEST_TIMEOUT).json()
+
+
+@st.cache_data(ttl=8, show_spinner=False)
+def fetch_teacher_dashboard(user_id):
+    return API.get(f"{API_URL}/dashboard/teacher/{user_id}", timeout=REQUEST_TIMEOUT).json()
+
+
+@st.cache_data(ttl=8, show_spinner=False)
+def fetch_student_dashboard(user_id):
+    return API.get(f"{API_URL}/dashboard/student/{user_id}", timeout=REQUEST_TIMEOUT).json()
+
+
+@st.cache_data(ttl=8, show_spinner=False)
+def fetch_student_report(user_id):
+    return API.get(f"{API_URL}/students/user/{user_id}/report", timeout=REQUEST_TIMEOUT).json()
+
 # ---------------------------------------------------------
 # PAGE CONFIG & STYLING (HIGH CONTRAST & ACCESSIBILITY FIXES)
 # ---------------------------------------------------------
@@ -314,6 +379,28 @@ def show_auth_screen():
 
         with tab_signin:
             st.caption("Access your registered teacher or student profile.")
+
+            with st.expander("Demo accounts already in the database"):
+                st.caption("Every account below uses the same password shown next to it.")
+                st.markdown(
+                    "**Teachers**\n"
+                    "- teacher@eduzone.com — `teacher123` (Dr. Ava Carter — Data Structures & Algorithms)\n"
+                    "- reyes@eduzone.com — `teacher123` (Prof. Daniel Reyes — Database Management Systems)\n"
+                    "- nair@eduzone.com — `teacher123` (Dr. Priya Nair — Computer Networks)\n\n"
+                    "**Students (CS-201 Section A)**\n"
+                    "- student@eduzone.com — `student123` (Mina Shah)\n"
+                    "- karan.mehta@eduzone.com — `student123` (Karan Mehta)\n"
+                    "- sofia.alvarez@eduzone.com — `student123` (Sofia Alvarez)\n"
+                    "- liam.chen@eduzone.com — `student123` (Liam Chen)\n"
+                    "- riya.kapoor@eduzone.com — `student123` (Riya Kapoor)\n\n"
+                    "**Students (CS-201 Section B)**\n"
+                    "- ethan.brooks@eduzone.com — `student123` (Ethan Brooks)\n"
+                    "- aisha.khan@eduzone.com — `student123` (Aisha Khan)\n"
+                    "- noah.kim@eduzone.com — `student123` (Noah Kim)\n"
+                    "- emma.wilson@eduzone.com — `student123` (Emma Wilson)\n"
+                    "- yusuf.ali@eduzone.com — `student123` (Yusuf Ali)"
+                )
+
             email = st.text_input("Email Address", key="login_email")
             password = st.text_input("Password", type="password", key="login_password")
 
@@ -322,9 +409,10 @@ def show_auth_screen():
                     st.warning("Please enter complete login credentials.")
                 else:
                     try:
-                        response = requests.post(
+                        response = API.post(
                             f"{API_URL}/auth/login",
                             json={"email": email, "password": password},
+                            timeout=REQUEST_TIMEOUT,
                         )
                         if response.status_code == 200:
                             st.session_state.user = response.json()["user"]
@@ -348,7 +436,7 @@ def show_auth_screen():
                     st.warning("Please complete all required fields.")
                 else:
                     try:
-                        response = requests.post(
+                        response = API.post(
                             f"{API_URL}/auth/register",
                             json={
                                 "name": name,
@@ -357,6 +445,7 @@ def show_auth_screen():
                                 "role": role,
                                 "department": department,
                             },
+                            timeout=REQUEST_TIMEOUT,
                         )
                         if response.status_code == 200:
                             st.session_state.user = response.json()["user"]
@@ -409,7 +498,7 @@ with st.sidebar:
 # ---------------------------------------------------------
 if user["role"] == "teacher":
     try:
-        dashboard = requests.get(f"{API_URL}/dashboard/teacher/{user['id']}").json()
+        dashboard = fetch_teacher_dashboard(user['id'])
     except Exception as exc:
         st.error(f"Unable to load teacher operations data: {exc}")
         st.stop()
@@ -477,7 +566,7 @@ if user["role"] == "teacher":
         st.caption("Select one of your classes, start today's session, then click each student to mark them present or absent.")
 
         try:
-            my_classes = requests.get(f"{API_URL}/teachers/{user['id']}/classes").json()
+            my_classes = fetch_teacher_classes(user['id'])
         except Exception:
             my_classes = []
 
@@ -495,31 +584,36 @@ if user["role"] == "teacher":
 
             # Find or start today's session for this classroom+subject
             try:
-                today_session = requests.get(
+                today_session = API.get(
                     f"{API_URL}/classrooms/{classroom_id}/subjects/{subject_id}/today-session",
                     params={"teacher_id": user["id"]},
+                    timeout=REQUEST_TIMEOUT,
                 ).json()
             except Exception:
                 today_session = {}
 
             if not today_session:
                 if st.button("Start Today's Session", type="primary", use_container_width=True, key="start_session_btn"):
-                    requests.post(
+                    API.post(
                         f"{API_URL}/classrooms/{classroom_id}/subjects/{subject_id}/sessions",
                         json={"teacher_id": user["id"]},
+                        timeout=REQUEST_TIMEOUT,
                     )
+                    fetch_teacher_dashboard.clear()
                     st.rerun()
             else:
                 session_id = today_session["id"]
                 st.success(f"Session active — started {today_session['session_date']}")
 
                 try:
-                    roster = requests.get(f"{API_URL}/classrooms/{classroom_id}/students").json()
+                    roster = fetch_students(classroom_id)
                 except Exception:
                     roster = []
 
                 try:
-                    current_attendance = requests.get(f"{API_URL}/sessions/{session_id}/attendance").json()
+                    current_attendance = API.get(
+                        f"{API_URL}/sessions/{session_id}/attendance", timeout=REQUEST_TIMEOUT
+                    ).json()
                 except Exception:
                     current_attendance = {}
 
@@ -543,25 +637,28 @@ if user["role"] == "teacher":
                             st.caption(student["student_id"])
                         with row_cols[2]:
                             if st.button("Present", key=f"present_{student['id']}", use_container_width=True):
-                                requests.post(
+                                API.post(
                                     f"{API_URL}/sessions/{session_id}/attendance/{student['id']}",
                                     json={"status": "present"},
+                                    timeout=REQUEST_TIMEOUT,
                                 )
                                 st.rerun()
                         with row_cols[3]:
                             if st.button("Absent", key=f"absent_{student['id']}", use_container_width=True):
-                                requests.post(
+                                API.post(
                                     f"{API_URL}/sessions/{session_id}/attendance/{student['id']}",
                                     json={"status": "absent"},
+                                    timeout=REQUEST_TIMEOUT,
                                 )
                                 st.rerun()
 
                 st.markdown("---")
                 st.write("**Attendance Summary — this subject**")
                 try:
-                    summary = requests.get(
+                    summary = API.get(
                         f"{API_URL}/classrooms/{classroom_id}/attendance-summary",
                         params={"subject_id": subject_id},
+                        timeout=REQUEST_TIMEOUT,
                     ).json()
                     if summary:
                         st.dataframe(
@@ -583,6 +680,28 @@ if user["role"] == "teacher":
                 except Exception:
                     st.warning("Unable to load attendance summary.")
 
+                st.markdown("---")
+                unmarked_count = sum(
+                    1 for s in roster
+                    if current_attendance.get(str(s["id"]), current_attendance.get(s["id"])) is None
+                )
+                if unmarked_count:
+                    st.caption(f"{unmarked_count} student(s) not yet marked — ending the session will record them as absent.")
+
+                if st.button("End Today's Session", type="primary", use_container_width=True, key="end_session_btn"):
+                    result = API.post(f"{API_URL}/sessions/{session_id}/end", timeout=REQUEST_TIMEOUT).json()
+                    fetch_teacher_dashboard.clear()
+                    fetch_student_dashboard.clear()
+                    fetch_student_report.clear()
+                    if result.get("auto_absent"):
+                        st.success(
+                            f"Session ended and saved to the database. "
+                            f"{result['auto_absent']} unmarked student(s) were recorded as absent."
+                        )
+                    else:
+                        st.success("Session ended and attendance finalized in the database.")
+                    st.rerun()
+
         st.markdown("</div>", unsafe_allow_html=True)
 
         st.markdown("<div class='content-card'>", unsafe_allow_html=True)
@@ -595,9 +714,10 @@ if user["role"] == "teacher":
                 with st.spinner("Extracting text and indexing vector embeddings..."):
                     try:
                         files = {"file": (uploaded_file.name, uploaded_file.getvalue(), "application/pdf")}
-                        response = requests.post(f"{API_URL}/upload", files=files)
+                        response = API.post(f"{API_URL}/upload", files=files, timeout=60)
                         if response.status_code == 200:
                             st.success(response.json()["message"])
+                            fetch_materials.clear()
                             st.rerun()
                         else:
                             st.error("Document processing failed.")
@@ -618,7 +738,8 @@ if user["role"] == "teacher":
             submit_class = st.form_submit_button("Create Classroom", use_container_width=True)
             if submit_class:
                 if new_class_name.strip():
-                    requests.post(f"{API_URL}/classrooms", json={"name": new_class_name.strip()})
+                    API.post(f"{API_URL}/classrooms", json={"name": new_class_name.strip()}, timeout=REQUEST_TIMEOUT)
+                    fetch_classrooms.clear()
                     st.success(f"Classroom '{new_class_name.strip()}' created.")
                     st.rerun()
                 else:
@@ -627,7 +748,7 @@ if user["role"] == "teacher":
         st.divider()
 
         try:
-            classrooms = requests.get(f"{API_URL}/classrooms").json()
+            classrooms = fetch_classrooms()
         except Exception:
             classrooms = []
 
@@ -644,17 +765,19 @@ if user["role"] == "teacher":
                     submit_enroll = st.form_submit_button("Enroll Student", use_container_width=True)
                     if submit_enroll:
                         if s_name.strip() and s_id.strip():
-                            requests.post(
+                            API.post(
                                 f"{API_URL}/classrooms/{selected_class_id}/students",
                                 json={"name": s_name.strip(), "student_id": s_id.strip(), "email": s_email.strip() or None},
+                                timeout=REQUEST_TIMEOUT,
                             )
+                            fetch_students.clear()
                             st.success("Student assigned successfully.")
                             st.rerun()
                         else:
                             st.warning("Complete all required student details.")
 
             try:
-                students = requests.get(f"{API_URL}/classrooms/{selected_class_id}/students").json()
+                students = fetch_students(selected_class_id)
                 if students:
                     st.write("**Enrolled Roster**")
                     st.dataframe(
@@ -674,7 +797,7 @@ if user["role"] == "teacher":
         st.markdown("<div class='content-card'>", unsafe_allow_html=True)
         st.markdown("<div class='card-title'>Indexed Repository</div>", unsafe_allow_html=True)
         try:
-            materials = requests.get(f"{API_URL}/materials").json()
+            materials = fetch_materials()
             if materials:
                 st.dataframe(
                     [{"Filename": m["filename"], "Uploaded Date": m["uploaded_at"]} for m in materials],
@@ -693,7 +816,7 @@ if user["role"] == "teacher":
 # ---------------------------------------------------------
 else:
     try:
-        dashboard = requests.get(f"{API_URL}/dashboard/student/{user['id']}").json()
+        dashboard = fetch_student_dashboard(user['id'])
     except Exception as exc:
         st.error(f"Unable to load student workspace data: {exc}")
         st.stop()
@@ -768,9 +891,10 @@ else:
                 if qa_query.strip():
                     with st.spinner("Searching course materials..."):
                         try:
-                            res = requests.post(
+                            res = API.post(
                                 f"{API_URL}/ai/generate",
                                 json={"mode": "qa", "query": qa_query.strip()},
+                                timeout=60,
                             )
                             if res.status_code == 200:
                                 st.markdown("### Response")
@@ -788,9 +912,10 @@ else:
             if st.button("Generate Course Summary", type="primary", key="btn_summary"):
                 with st.spinner("Synthesizing course materials..."):
                     try:
-                        res = requests.post(
+                        res = API.post(
                             f"{API_URL}/ai/generate",
                             json={"mode": "summary", "query": sum_query.strip()},
+                            timeout=60,
                         )
                         if res.status_code == 200:
                             st.markdown("### Summary")
@@ -806,9 +931,10 @@ else:
             if st.button("Generate 3-Question Practice Quiz", type="primary", key="btn_quiz"):
                 with st.spinner("Creating practice questions..."):
                     try:
-                        res = requests.post(
+                        res = API.post(
                             f"{API_URL}/ai/generate",
                             json={"mode": "quiz", "query": quiz_topic.strip()},
+                            timeout=60,
                         )
                         if res.status_code == 200:
                             st.markdown("### Practice Assessment")
@@ -824,9 +950,10 @@ else:
             if st.button("Generate Study Flashcards", type="primary", key="btn_cards"):
                 with st.spinner("Building flashcards..."):
                     try:
-                        res = requests.post(
+                        res = API.post(
                             f"{API_URL}/ai/generate",
                             json={"mode": "flashcards", "query": card_topic.strip()},
+                            timeout=60,
                         )
                         if res.status_code == 200:
                             st.markdown("### Revision Cards")
@@ -841,7 +968,7 @@ else:
         st.markdown("<div class='content-card'>", unsafe_allow_html=True)
         st.markdown("<div class='card-title'>My Attendance & Marks — By Subject</div>", unsafe_allow_html=True)
         try:
-            report = requests.get(f"{API_URL}/students/user/{user['id']}/report").json()
+            report = fetch_student_report(user['id'])
         except Exception:
             report = {"subjects": []}
 
@@ -892,7 +1019,7 @@ else:
         st.markdown("<div class='content-card'>", unsafe_allow_html=True)
         st.markdown("<div class='card-title'>Course Repository Access</div>", unsafe_allow_html=True)
         try:
-            materials = requests.get(f"{API_URL}/materials").json()
+            materials = fetch_materials()
             if materials:
                 for item in materials:
                     st.write(f"- {item['filename']} (Uploaded: {item['uploaded_at']})")

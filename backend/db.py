@@ -13,6 +13,11 @@ def hash_password(password: str) -> str:
 def _connect():
     conn = sqlite3.connect(DB_PATH)
     conn.execute("PRAGMA foreign_keys = ON")
+    # WAL + NORMAL synchronous let readers and writers avoid blocking each
+    # other and skip a full disk flush on every commit. Purely a perf
+    # pragma - it does not change any query result or function behavior.
+    conn.execute("PRAGMA journal_mode = WAL")
+    conn.execute("PRAGMA synchronous = NORMAL")
     return conn
 
 
@@ -74,7 +79,6 @@ def init_db():
         )
     """)
 
-    # Which teacher teaches which subject in which classroom.
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS classroom_subjects (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -88,8 +92,6 @@ def init_db():
         )
     """)
 
-    # A roster row optionally links to a real login (user_id), so a logged-in
-    # student can be matched back to their own attendance/marks.
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS students (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -104,7 +106,6 @@ def init_db():
 
     _ensure_column(conn, "students", "user_id", "INTEGER")
 
-    # A session is one teacher teaching one subject to one classroom on a date.
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS class_sessions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -112,6 +113,8 @@ def init_db():
             subject_id INTEGER NOT NULL,
             teacher_id INTEGER NOT NULL,
             session_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            is_ended INTEGER NOT NULL DEFAULT 0,
+            ended_at TIMESTAMP,
             FOREIGN KEY (classroom_id) REFERENCES classrooms (id),
             FOREIGN KEY (subject_id) REFERENCES subjects (id),
             FOREIGN KEY (teacher_id) REFERENCES users (id)
@@ -120,6 +123,8 @@ def init_db():
 
     _ensure_column(conn, "class_sessions", "subject_id", "INTEGER NOT NULL DEFAULT 0")
     _ensure_column(conn, "class_sessions", "teacher_id", "INTEGER NOT NULL DEFAULT 0")
+    _ensure_column(conn, "class_sessions", "is_ended", "INTEGER NOT NULL DEFAULT 0")
+    _ensure_column(conn, "class_sessions", "ended_at", "TIMESTAMP")
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS attendance_records (
@@ -161,8 +166,6 @@ def init_db():
         )
     """)
 
-    # Note: attendance_rate / progress_score are no longer stored here -
-    # they are now always computed live from attendance_records + marks.
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS student_profiles (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -181,9 +184,6 @@ def init_db():
     conn.close()
 
 
-# ---------------------------------------------------------
-# SEED DATA HELPERS
-# ---------------------------------------------------------
 def _get_or_create_user(cursor, name, email, password, role, department):
     cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
     row = cursor.fetchone()
@@ -243,9 +243,6 @@ def _enroll_student(cursor, classroom_id, name, roll_no, user_id=None):
 
 
 def _seed_realistic_data(conn):
-    """Seeds real teacher/student accounts, subjects, classroom assignments,
-    a history of attendance sessions, and midterm marks. Runs only once -
-    if classrooms already exist we leave the data as-is."""
     cursor = conn.cursor()
 
     cursor.execute("SELECT COUNT(*) FROM classrooms")
@@ -258,7 +255,6 @@ def _seed_realistic_data(conn):
     if has_classrooms and has_subjects and has_assignments:
         return
 
-    # --- Teachers ---
     ava = _get_or_create_user(cursor, "Dr. Ava Carter", "teacher@eduzone.com", "teacher123", "teacher", "Computer Science")
     reyes = _get_or_create_user(cursor, "Prof. Daniel Reyes", "reyes@eduzone.com", "teacher123", "teacher", "Computer Science")
     nair = _get_or_create_user(cursor, "Dr. Priya Nair", "nair@eduzone.com", "teacher123", "teacher", "Computer Science")
@@ -280,12 +276,10 @@ def _seed_realistic_data(conn):
                 (uid, dept, load, topic, routine, hours, weekly),
             )
 
-    # --- Subjects ---
     dsa = _get_or_create_subject(cursor, "Data Structures & Algorithms", "CS201")
     dbms = _get_or_create_subject(cursor, "Database Management Systems", "CS301")
     net = _get_or_create_subject(cursor, "Computer Networks", "CS302")
 
-    # --- Classrooms ---
     section_a = _get_or_create_classroom(cursor, "CS-201 Section A")
     section_b = _get_or_create_classroom(cursor, "CS-201 Section B")
 
@@ -294,7 +288,6 @@ def _seed_realistic_data(conn):
         _assign_subject_to_teacher(cursor, classroom_id, dbms, reyes)
         _assign_subject_to_teacher(cursor, classroom_id, net, nair)
 
-    # --- Students (each gets a real login account and is enrolled already) ---
     student_roster = [
         ("Mina Shah", "student@eduzone.com", "STU-2026-001", section_a),
         ("Karan Mehta", "karan.mehta@eduzone.com", "STU-2026-002", section_a),
@@ -327,7 +320,6 @@ def _seed_realistic_data(conn):
                 )
         _enroll_student(cursor, classroom_id, name, roll_no, user_id=uid)
 
-    # --- A short real history: 6 past sessions per subject, with attendance ---
     random.seed(7)
     subjects_by_classroom = {section_a: [dsa, dbms, net], section_b: [dsa, dbms, net]}
     teacher_by_subject = {dsa: ava, dbms: reyes, net: nair}
@@ -343,7 +335,8 @@ def _seed_realistic_data(conn):
                 teacher_id = teacher_by_subject[subject_id]
                 for _ in range(6):
                     cursor.execute(
-                        "INSERT INTO class_sessions (classroom_id, subject_id, teacher_id) VALUES (?, ?, ?)",
+                        "INSERT INTO class_sessions (classroom_id, subject_id, teacher_id, is_ended, ended_at) "
+                        "VALUES (?, ?, ?, 1, CURRENT_TIMESTAMP)",
                         (classroom_id, subject_id, teacher_id),
                     )
                     session_id = cursor.lastrowid
@@ -368,9 +361,6 @@ def _seed_realistic_data(conn):
                     )
 
 
-# ---------------------------------------------------------
-# MATERIALS
-# ---------------------------------------------------------
 def add_material(filename: str):
     conn = _connect()
     cursor = conn.cursor()
@@ -388,9 +378,6 @@ def get_materials():
     return [{"filename": r[0], "uploaded_at": r[1]} for r in rows]
 
 
-# ---------------------------------------------------------
-# SUBJECTS
-# ---------------------------------------------------------
 def get_subjects():
     conn = _connect()
     cursor = conn.cursor()
@@ -401,7 +388,6 @@ def get_subjects():
 
 
 def get_teacher_classes(teacher_id: int):
-    """Every classroom + subject combination this teacher is assigned to teach."""
     conn = _connect()
     cursor = conn.cursor()
     cursor.execute(
@@ -428,9 +414,6 @@ def get_teacher_classes(teacher_id: int):
     ]
 
 
-# ---------------------------------------------------------
-# CLASSROOMS & STUDENTS
-# ---------------------------------------------------------
 def create_classroom(name: str) -> int:
     conn = _connect()
     cursor = conn.cursor()
@@ -451,9 +434,6 @@ def get_classrooms():
 
 
 def add_student(classroom_id: int, name: str, student_id: str, email: str = None) -> int:
-    """Enrolls a student in a classroom. If email matches an existing student
-    login, the roster row is linked to that account so the student can see
-    their own attendance/marks."""
     conn = _connect()
     cursor = conn.cursor()
     user_id = None
@@ -484,9 +464,6 @@ def get_students(classroom_id: int):
     return [{"id": r[0], "name": r[1], "student_id": r[2], "user_id": r[3]} for r in rows]
 
 
-# ---------------------------------------------------------
-# SESSIONS & ATTENDANCE (per subject, taught by a specific teacher)
-# ---------------------------------------------------------
 def start_subject_session(classroom_id: int, subject_id: int, teacher_id: int) -> dict:
     conn = _connect()
     cursor = conn.cursor()
@@ -503,13 +480,12 @@ def start_subject_session(classroom_id: int, subject_id: int, teacher_id: int) -
 
 
 def get_latest_open_session(classroom_id: int, subject_id: int, teacher_id: int):
-    """Returns today's session for this classroom/subject/teacher, if one was already started."""
     conn = _connect()
     cursor = conn.cursor()
     cursor.execute(
         """SELECT id, session_date FROM class_sessions
            WHERE classroom_id = ? AND subject_id = ? AND teacher_id = ?
-           AND date(session_date) = date('now')
+           AND date(session_date) = date('now') AND is_ended = 0
            ORDER BY id DESC LIMIT 1""",
         (classroom_id, subject_id, teacher_id),
     )
@@ -520,16 +496,71 @@ def get_latest_open_session(classroom_id: int, subject_id: int, teacher_id: int)
     return {"id": row[0], "session_date": row[1]}
 
 
+def end_session(session_id: int):
+    """Finalize a session: any enrolled student with no attendance record yet
+    for this session is marked absent by default, then the session is closed
+    so it stops showing up as "today's active session" and a fresh one can
+    be started later. Existing attendance records are left untouched."""
+    conn = _connect()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "SELECT classroom_id, is_ended FROM class_sessions WHERE id = ?", (session_id,)
+    )
+    row = cursor.fetchone()
+    if row is None:
+        conn.close()
+        return None
+
+    classroom_id, already_ended = row
+    if already_ended:
+        conn.close()
+        return {"id": session_id, "already_ended": True, "auto_absent": 0, "total_students": 0}
+
+    cursor.execute("SELECT id FROM students WHERE classroom_id = ?", (classroom_id,))
+    roster_ids = [r[0] for r in cursor.fetchall()]
+
+    cursor.execute("SELECT student_id FROM attendance_records WHERE session_id = ?", (session_id,))
+    already_marked = {r[0] for r in cursor.fetchall()}
+
+    auto_absent_count = 0
+    for sid in roster_ids:
+        if sid not in already_marked:
+            cursor.execute(
+                "INSERT INTO attendance_records (session_id, student_id, status) VALUES (?, ?, 'absent')",
+                (session_id, sid),
+            )
+            auto_absent_count += 1
+
+    cursor.execute(
+        "UPDATE class_sessions SET is_ended = 1, ended_at = CURRENT_TIMESTAMP WHERE id = ?",
+        (session_id,),
+    )
+
+    conn.commit()
+    conn.close()
+    return {
+        "id": session_id,
+        "already_ended": False,
+        "auto_absent": auto_absent_count,
+        "total_students": len(roster_ids),
+    }
+
+
 def get_sessions_for_subject(classroom_id: int, subject_id: int):
     conn = _connect()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT id, session_date FROM class_sessions WHERE classroom_id = ? AND subject_id = ? ORDER BY id DESC",
+        "SELECT id, session_date, is_ended, ended_at FROM class_sessions "
+        "WHERE classroom_id = ? AND subject_id = ? ORDER BY id DESC",
         (classroom_id, subject_id),
     )
     rows = cursor.fetchall()
     conn.close()
-    return [{"id": r[0], "session_date": r[1]} for r in rows]
+    return [
+        {"id": r[0], "session_date": r[1], "is_ended": bool(r[2]), "ended_at": r[3]}
+        for r in rows
+    ]
 
 
 def mark_attendance(session_id: int, student_id: int, status: str):
@@ -560,7 +591,6 @@ def get_session_attendance(session_id: int):
 
 
 def get_attendance_summary(classroom_id: int, subject_id: int = None):
-    """Per-student attendance percentage for a classroom, optionally scoped to one subject."""
     conn = _connect()
     cursor = conn.cursor()
 
@@ -628,12 +658,7 @@ def get_student_session_log(classroom_id: int, student_id: int):
     return [{"session_id": r[0], "session_date": r[1], "subject_name": r[2], "status": r[3]} for r in rows]
 
 
-# ---------------------------------------------------------
-# STUDENT-FACING REPORT: attendance % and marks per subject
-# ---------------------------------------------------------
 def get_student_subject_report(user_id: int):
-    """For a logged-in student, returns attendance % and marks in every subject
-    taught in their classroom, plus overall attendance and overall marks %."""
     conn = _connect()
     cursor = conn.cursor()
     cursor.execute("SELECT id, classroom_id FROM students WHERE user_id = ?", (user_id,))
@@ -707,9 +732,6 @@ def get_student_subject_report(user_id: int):
     }
 
 
-# ---------------------------------------------------------
-# USERS / AUTH
-# ---------------------------------------------------------
 def create_user(name: str, email: str, password: str, role: str, department: str):
     conn = _connect()
     cursor = conn.cursor()
@@ -774,9 +796,6 @@ def get_user_by_id(user_id: int):
     return {"id": row[0], "name": row[1], "email": row[2], "role": row[3], "department": row[4]}
 
 
-# ---------------------------------------------------------
-# DASHBOARDS (now computed from real data, not fixed placeholder numbers)
-# ---------------------------------------------------------
 def get_student_dashboard(user_id: int):
     user = get_user_by_id(user_id)
     if user is None:
