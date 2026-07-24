@@ -101,7 +101,9 @@ Contributing
 
 Contact
 
-- Project contributors: Rudranil Mallick, Harshika Joshi
+- Project contributors:
+- Rudranil Mallick (rudranilmallick8335@gmail.com)
+- Harshika Joshi (harshikajoshi58@gmail.com)
 
 License
 
