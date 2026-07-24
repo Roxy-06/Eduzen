@@ -1,3 +1,4 @@
+import json
 import os
 import pypdf
 import faiss
@@ -21,20 +22,7 @@ client = _build_client()
 # ---------------------------------------------------------------------
 # GEMMA 4 AS THE GENERATION BRAIN
 # ---------------------------------------------------------------------
-# Gemma 4 is served through the same Gemini API endpoint and the same
-# GEMINI_API_KEY you already have configured - it's just a different
-# model string, not a different SDK or a different account. Swappable
-# via env var so you can trade cost/speed for quality without touching
-# code:
-#   gemma-4-26b-a4b-it  -> MoE, fastest/cheapest, strong reasoning (default)
-#   gemma-4-31b-it      -> Dense, highest quality, slower/pricier
-#   gemma-4-4b-it       -> smallest, use only if you need very low latency
 GENERATION_MODEL = os.getenv("GEMMA_MODEL", "gemma-4-26b-a4b-it")
-
-# Embeddings stay on Gemini Embedding. Gemma 4 has no embedding variant,
-# and switching embedding models would change the vector dimensionality,
-# invalidating every PDF you've already indexed in FAISS. Leaving this
-# alone means today's swap is zero-risk for existing indexed material.
 EMBEDDING_MODEL = "gemini-embedding-2"
 
 text_chunks = []
@@ -91,10 +79,16 @@ def index_document(pdf_path: str):
 
 def retrieve_context(query: str, top_k: int = 3) -> str:
     global index, text_chunks
-    if index is None or len(text_chunks) == 0:
+    # If there are no chunks available, nothing to retrieve.
+    if len(text_chunks) == 0:
         return ""
 
-    if client is None:
+    # If an index exists (FAISS + embeddings path), use it. Otherwise
+    # fall back to returning the first `top_k` in-memory chunks that
+    # were stored when `client` was not configured or embeddings were
+    # not generated.
+
+    if client is None or index is None:
         return "\n\n---\n\n".join(text_chunks[:top_k])
 
     query_resp = client.models.embed_content(
@@ -108,6 +102,27 @@ def retrieve_context(query: str, top_k: int = 3) -> str:
     retrieved = [text_chunks[idx] for idx in indices[0] if idx < len(text_chunks)]
     return "\n\n---\n\n".join(retrieved)
 
+
+def _stub_quiz() -> str:
+    return json.dumps({
+        "questions": [
+            {
+                "question": "What is the main concept discussed in the uploaded material?",
+                "options": {"A": "Overview", "B": "Methodology", "C": "Practice", "D": "Review"},
+                "correct": "A",
+            }
+        ]
+    })
+
+
+def _stub_flashcards() -> str:
+    return json.dumps({
+        "cards": [
+            {"question": "Key idea", "answer": "The central theme from the uploaded material."}
+        ]
+    })
+
+
 def generate_rag_response(mode: str, query: str = "") -> str:
     context = retrieve_context(query if query else "Overview of key concepts")
 
@@ -116,9 +131,9 @@ def generate_rag_response(mode: str, query: str = "") -> str:
 
     if client is None:
         if mode == "quiz":
-            return "Sample quiz:\n1. What is the main concept discussed in the uploaded material?\nA. Overview\nB. Methodology\nC. Practice\nD. Review\nCorrect answer: A"
+            return _stub_quiz()
         if mode == "flashcards":
-            return "Sample flashcards:\n- Concept: Key idea\n- Definition: The central theme from the uploaded material."
+            return _stub_flashcards()
         if mode == "summary":
             return "Summary: The uploaded material presents a clear framework, key concepts, and supporting examples that can be reviewed for study preparation."
         return f"Based on the uploaded material, the main takeaway is that the supplied content should be reviewed carefully for understanding and revision.\n\nContext preview:\n{context[:400]}"
@@ -126,15 +141,43 @@ def generate_rag_response(mode: str, query: str = "") -> str:
     prompts = {
         "qa": f"Context from course materials:\n{context}\n\nQuestion: {query}\n\nAnswer clearly and concisely based ONLY on the context provided:",
         "summary": f"Context from course materials:\n{context}\n\nGenerate a structured, bulleted summary covering the core concepts, main ideas, and important formulas/terms:",
-        "quiz": f"Context from course materials:\n{context}\n\nGenerate a 3-question multiple-choice quiz based on this content. Include 4 options (A, B, C, D) per question and provide the correct answer key at the bottom.",
-        "flashcards": f"Context from course materials:\n{context}\n\nGenerate 5 study flashcards in the following format:\n**Card [N]**\n**Concept:** [Concept Name]\n**Definition:** [Brief Explanation]\n---"
+        "quiz": (
+            f"Context from course materials:\n{context}\n\n"
+            "Generate a 3-question multiple-choice quiz based on this content.\n"
+            "Respond ONLY with valid JSON, no markdown fences, no commentary, in exactly this shape:\n"
+            '{"questions": [{"question": "...", "options": {"A": "...", "B": "...", "C": "...", "D": "..."}, "correct": "A"}]}\n'
+            'The "correct" field must be one of "A", "B", "C", or "D" matching the correct option key.'
+        ),
+        "flashcards": (
+            f"Context from course materials:\n{context}\n\n"
+            "Generate 5 study flashcards covering key terms, concepts, and formulas.\n"
+            "Respond ONLY with valid JSON, no markdown fences, no commentary, in exactly this shape:\n"
+            '{"cards": [{"question": "...", "answer": "..."}]}'
+        ),
     }
 
     prompt = prompts.get(mode, prompts["qa"])
 
-    response = client.models.generate_content(
-        model=GENERATION_MODEL,
-        contents=prompt,
-        config=types.GenerateContentConfig(temperature=0.3)
-    )
-    return response.text
+    if mode in ("quiz", "flashcards"):
+        config = types.GenerateContentConfig(temperature=0.3, response_mime_type="application/json")
+    else:
+        config = types.GenerateContentConfig(temperature=0.3)
+
+    try:
+        response = client.models.generate_content(
+            model=GENERATION_MODEL,
+            contents=prompt,
+            config=config,
+        )
+        return response.text
+    except Exception:
+        # If the model/SDK combo doesn't support response_mime_type, retry
+        # once without it rather than failing the whole request.
+        if mode in ("quiz", "flashcards"):
+            response = client.models.generate_content(
+                model=GENERATION_MODEL,
+                contents=prompt,
+                config=types.GenerateContentConfig(temperature=0.3),
+            )
+            return response.text
+        raise

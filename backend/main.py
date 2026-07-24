@@ -47,6 +47,17 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 init_db()
 
+# Rebuild in-memory RAG index from any previously uploaded PDFs so that
+# the AI can generate content for materials uploaded before a server
+# restart. This is lightweight and safe for small course PDFs.
+for _f in os.listdir(UPLOAD_DIR):
+    if _f.lower().endswith(".pdf"):
+        try:
+            index_document(os.path.join(UPLOAD_DIR, _f))
+        except Exception:
+            # Don't let indexing failures prevent the app from starting.
+            pass
+
 
 class QueryRequest(BaseModel):
     mode: str
