@@ -7,7 +7,7 @@
 
 body {
   margin: 0;
-  background-color: #FEDEE1;
+  background-color: #EFF6FF;
   color: #000000;
   -webkit-font-smoothing: antialiased;
 }
@@ -47,11 +47,11 @@ h3 {
 
 /* Sidebar Sidebar */
 .sidebar {
-  background-color: #70020f;
+  background-color: #1E40AF;
   color: #ffffff;
   width: 300px;
   flex-shrink: 0;
-  border-right: 1px solid #4a010a;
+  border-right: 1px solid #1D4ED8;
   padding: 2rem 1.5rem;
   display: flex;
   flex-direction: column;
@@ -63,7 +63,7 @@ h3 {
 }
 
 .sidebar-caption {
-  color: #f2c6cb;
+  color: #BFDBFE;
   font-size: 0.85rem;
   margin-bottom: 1.5rem;
 }
@@ -83,7 +83,7 @@ h3 {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #f2c6cb;
+  color: #BFDBFE;
   margin: 12px 0 6px 2px;
 }
 
@@ -115,7 +115,7 @@ h3 {
 
 /* Hero Banner */
 .hero-banner {
-  background: linear-gradient(135deg, #4a010a 0%, #70020f 50%, #8a0313 100%);
+  background: linear-gradient(135deg, #1D4ED8 0%, #1E40AF 50%, #2563EB 100%);
   border-radius: 14px;
   padding: 26px 30px;
   color: #ffffff;
@@ -143,16 +143,16 @@ h3 {
 
 /* Profile Card */
 .profile-card {
-  background: #f2c6cb;
+  background: #BFDBFE;
   border-radius: 10px;
   padding: 16px;
-  border: 1px solid #e8a5ab;
+  border: 1px solid #93C5FD;
   margin-bottom: 12px;
-  color: #70020f;
+  color: #1E40AF;
 }
 
 .profile-card * {
-  color: #70020f;
+  color: #1E40AF;
 }
 
 /* Metric Cards */
@@ -243,7 +243,7 @@ h3 {
 }
 
 .badge-dark {
-  background: #70020f;
+  background: #1E40AF;
   color: #ffffff;
 }
 
@@ -277,21 +277,21 @@ h3 {
 }
 
 .btn-primary {
-  background-color: #70020f;
-  color: #f2c6cb;
-  border-color: #4a010a;
+  background-color: #1E40AF;
+  color: #BFDBFE;
+  border-color: #1D4ED8;
   font-weight: 600;
 }
 
 .btn-primary:hover {
-  background-color: #4a010a;
-  border-color: #70020f;
-  color: #f2c6cb;
+  background-color: #1D4ED8;
+  border-color: #1E40AF;
+  color: #BFDBFE;
 }
 
 .btn-primary:focus {
   outline: none;
-  box-shadow: 0 0 0 2px #f2c6cb;
+  box-shadow: 0 0 0 2px #BFDBFE;
 }
 
 .btn-full {
@@ -327,8 +327,8 @@ h3 {
 
 .input-control:focus {
   outline: none;
-  border-color: #70020f;
-  box-shadow: 0 0 0 1px #70020f;
+  border-color: #1E40AF;
+  box-shadow: 0 0 0 1px #1E40AF;
 }
 
 /* Tabs */
@@ -358,7 +358,7 @@ h3 {
 
 .tab-btn.active {
   background: #f1f5f9;
-  color: #70020f;
+  color: #1E40AF;
   font-weight: 700;
 }
 
@@ -426,7 +426,7 @@ table.data-table th {
 }
 
 .flip-card-back {
-  background: #70020f;
+  background: #1E40AF;
   transform: rotateY(180deg);
 }
 
@@ -442,7 +442,7 @@ table.data-table th {
   text-transform: uppercase;
   opacity: 0.7;
   margin-bottom: 10px;
-  color: #70020f;
+  color: #1E40AF;
 }
 
 .flip-text {
