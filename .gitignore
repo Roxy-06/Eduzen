@@ -14,3 +14,11 @@ venv/
 .DS_Store
 uploads/*
 !uploads/.gitkeep
+
+# Local JWT signing secret
+backend/.jwt_secret
+
+# Local SQLite databases
+*.db
+*.db-wal
+*.db-shm

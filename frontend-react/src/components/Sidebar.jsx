@@ -1,44 +1,68 @@
-import { api } from '../api';
+import { clearCache } from '../api';
+import { useToast } from '../App';
 
-export default function Sidebar({ user, onLogout, navItems, currentNav, onNavChange }) {
+export default function Sidebar({ user, onLogout, navItems, currentNav, onNavChange, role }) {
+    const toast = useToast();
+    const isTeacher = role === 'teacher';
 
     const handleLogout = () => {
-        // Clear API cache when logging out
-        import('../api').then(({ clearCache }) => clearCache());
+        clearCache();
+        toast('Signed out successfully.', 'info');
         onLogout();
     };
 
+    const initials = user.name
+        .split(' ')
+        .map(w => w[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase();
+
     return (
         <div className="sidebar">
-            <h2>EduZen</h2>
-            <div className="sidebar-caption">System Dashboard v2.0</div>
-            <div className="divider"></div>
+            {/* Logo */}
+            <div className="sidebar-logo">SVMIT</div>
+            <div className="sidebar-version">Academic ERP · v2.0</div>
+            <div className="divider" />
 
+            {/* Profile */}
             <div className="profile-card">
-                <div style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase' }}>CURRENT USER</div>
-                <div style={{ fontSize: '1rem', fontWeight: 600, marginTop: '2px' }}>{user.name}</div>
-                <div style={{ marginTop: '6px' }}>
-                    <span className="text-badge badge-primary">{user.role.toUpperCase()}</span>
+                <div className="profile-avatar">{initials}</div>
+                <div className="profile-name">{user.name}</div>
+                <div className="profile-meta">
+                    <span className={`text-badge ${isTeacher ? 'badge-dark' : 'badge-success'}`}>
+                        {user.role.toUpperCase()}
+                    </span>
                 </div>
-                <div style={{ fontSize: '0.8rem', marginTop: '8px' }}>Department: {user.department}</div>
+                <div className="profile-meta" style={{ marginTop: '6px' }}>
+                    {user.department}
+                </div>
             </div>
 
-            <div className="nav-label">Navigate</div>
+            {/* Nav */}
+            <div className="nav-label">Navigation</div>
             <div className="sidebar-nav">
-                {navItems.map(item => (
-                    <div
-                        key={item}
-                        className={`nav-item ${currentNav === item ? 'active' : ''}`}
-                        onClick={() => onNavChange(item)}
-                    >
-                        {item}
-                    </div>
-                ))}
+                {navItems.map(item => {
+                    const label = typeof item === 'string' ? item : item.label;
+                    const emoji = typeof item === 'string' ? '' : item.emoji;
+                    const isActive = currentNav === label;
+                    return (
+                        <div
+                            key={label}
+                            className={`nav-item ${isActive ? `active ${!isTeacher ? 'teal-active' : ''}` : ''}`}
+                            onClick={() => onNavChange(label)}
+                        >
+                            {emoji && <span className="nav-emoji">{emoji}</span>}
+                            {label}
+                        </div>
+                    );
+                })}
             </div>
 
-            <div className="divider" style={{ marginTop: 'auto' }}></div>
-            <button onClick={handleLogout} className="btn btn-primary btn-full">
-                Sign Out
+            {/* Logout */}
+            <div className="divider" style={{ marginTop: 'auto' }} />
+            <button onClick={handleLogout} className="btn btn-danger btn-full">
+                ↩ Sign Out
             </button>
         </div>
     );
